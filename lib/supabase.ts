@@ -27,4 +27,5 @@ export interface Student {
   signedUp: boolean | null
   refreshToken: string | null
   refreshTokenExpiresat: string | null
+  isVerifiedUser: boolean | null
 }

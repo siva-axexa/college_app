@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Find user with matching phone number
     const { data: user, error: fetchError } = await supabase
       .from('Student')
-      .select('id, phoneNumber, otp, otpExpiresAt, signedUp')
+      .select('id, phoneNumber, otp, otpExpiresAt, signedUp, isVerifiedUser')
       .eq('phoneNumber', phoneNumberDigits)
       .single();
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const authTokenExpiresAt = new Date(Date.now() + 20 * 60 * 1000).toISOString(); // 20 minutes
     const refreshTokenExpiresAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(); // 15 days
 
-    // Update user record with tokens and clear OTP
+    // Update user record with tokens, clear OTP, and mark as verified
     const { error: updateError } = await supabase
       .from('Student')
       .update({
@@ -118,7 +118,8 @@ export async function POST(request: NextRequest) {
         refreshToken: refreshToken,
         refreshTokenExpiresat: refreshTokenExpiresAt,
         otp: null,
-        otpExpiresAt: null
+        otpExpiresAt: null,
+        isVerifiedUser: true // Mark user as verified when OTP is successfully verified
       })
       .eq('id', user.id);
 

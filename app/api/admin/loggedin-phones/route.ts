@@ -5,11 +5,12 @@ export async function GET(request: NextRequest) {
   try {
     // TODO: Add admin authentication middleware here
     
-    // Fetch users who have phone numbers but are not signed up yet
+    // Fetch users who have verified their phone number but haven't signed up yet
     const { data: phones, error } = await supabase
       .from('Student')
       .select('id, phoneNumber, created_at')
       .eq('signedUp', false)
+      .eq('isVerifiedUser', true)
       .not('phoneNumber', 'is', null)
       .order('created_at', { ascending: false });
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Format the response
+    // Format the response - these are users who have verified their phone but haven't completed signup
     const formattedPhones = phones.map(phone => ({
       id: phone.id,
       phoneNumber: phone.phoneNumber.toString(), // Convert bigint to string
