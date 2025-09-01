@@ -12,13 +12,14 @@ import PoliciesAndPush from "@/components/admin/policies-and-push"
 
 type Section = "phones" | "users" | "applications" | "support" | "policies"
 
-export default function AdminPage({
+export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: { section?: string }
+  searchParams?: Promise<{ section?: string }>
 }) {
+  const params = await searchParams
   const allowed: Section[] = ["phones", "users", "applications", "support", "policies"]
-  const raw = (searchParams?.section || "phones").toLowerCase()
+  const raw = (params?.section || "phones").toLowerCase()
   const section: Section = allowed.includes(raw as Section) ? (raw as Section) : "phones"
 
   const title =

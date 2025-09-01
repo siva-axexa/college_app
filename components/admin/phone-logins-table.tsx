@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -8,10 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type PhoneLogin = {
   id: string
-  phone: string
+  phoneNumber: string
   userId: string
-  lastActive: string
-  device: string
+  createdAt: string
 }
 
 // Format numbers to Indian format: +91 98765 43210
@@ -35,27 +34,52 @@ function formatIndianPhone(raw: string) {
   return raw
 }
 
-const MOCK: PhoneLogin[] = [
-  { id: "1", phone: "+1 415-555-0142", userId: "u_01", lastActive: "2025-08-20 10:22", device: "iOS" },
-  { id: "2", phone: "+91 98765 43210", userId: "u_02", lastActive: "2025-08-20 09:03", device: "Android" },
-  { id: "3", phone: "+44 7700 900123", userId: "u_03", lastActive: "2025-08-19 21:10", device: "Web" },
-]
-
 export default function PhoneLoginsTable() {
   const [q, setQ] = useState("")
+  const [phones, setPhones] = useState<PhoneLogin[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch phones data from API
+  useEffect(() => {
+    const fetchPhones = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/admin/loggedin-phones')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch phones data')
+        }
+        
+        const result = await response.json()
+        if (result.success) {
+          setPhones(result.data)
+        } else {
+          throw new Error(result.error || 'Failed to fetch phones data')
+        }
+      } catch (err: any) {
+        console.error('Error fetching phones:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPhones()
+  }, [])
+
   const rows = useMemo(() => {
     const v = q.toLowerCase().trim()
-    if (!v) return MOCK
-    return MOCK.filter((r) => {
-      const formatted = formatIndianPhone(r.phone).toLowerCase()
+    if (!v) return phones
+    return phones.filter((r) => {
+      const formatted = formatIndianPhone(r.phoneNumber).toLowerCase()
       return (
         formatted.includes(v) ||
-        r.phone.toLowerCase().includes(v) ||
-        r.userId.toLowerCase().includes(v) ||
-        r.device.toLowerCase().includes(v)
+        r.phoneNumber.toLowerCase().includes(v) ||
+        r.userId.toLowerCase().includes(v)
       )
     })
-  }, [q])
+  }, [q, phones])
 
   return (
     <Card className="p-4">
@@ -64,29 +88,46 @@ export default function PhoneLoginsTable() {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Filter by phone, user, device"
+          placeholder="Filter by phone or user"
           className="w-[260px]"
         />
       </div>
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+          Error: {error}
+        </div>
+      )}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Phone</TableHead>
               <TableHead>User ID</TableHead>
-              <TableHead>Device</TableHead>
-              <TableHead>Last Active</TableHead>
+              <TableHead>Created At</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{formatIndianPhone(r.phone)}</TableCell>
-                <TableCell>{r.userId}</TableCell>
-                <TableCell>{r.device}</TableCell>
-                <TableCell>{r.lastActive}</TableCell>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center py-8">
+                  Loading...
+                </TableCell>
               </TableRow>
-            ))}
+            ) : rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  No logged-in phones found
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{formatIndianPhone(r.phoneNumber)}</TableCell>
+                  <TableCell>{r.userId}</TableCell>
+                  <TableCell>{new Date(r.createdAt).toLocaleString()}</TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
