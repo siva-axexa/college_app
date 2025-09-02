@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 type User = {
@@ -15,62 +17,121 @@ type User = {
   createdAt?: string
 }
 
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+const COURSE_OPTIONS = [
+  { value: 'ALL', label: 'All Courses' },
+  { value: 'ENGINEERING', label: 'Engineering' },
+  { value: 'MEDICAL', label: 'Medical' },
+  { value: 'LAW', label: 'Law' },
+  { value: 'ARTS', label: 'Arts & Science' }
+]
+
 export default function UsersTable() {
   const [q, setQ] = useState("")
+  const [selectedCourse, setSelectedCourse] = useState("ALL")
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  })
 
   // Fetch users data from API
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/admin/users')
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch users data')
-        }
-        
-        const result = await response.json()
-        if (result.success) {
-          setUsers(result.data)
-        } else {
-          throw new Error(result.error || 'Failed to fetch users data')
-        }
-      } catch (err: any) {
-        console.error('Error fetching users:', err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
+  const fetchUsers = async (page: number = 1, search: string = '', course: string = 'ALL') => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        ...(search && { search }),
+        ...(course !== 'ALL' && { course })
+      })
+      
+      const response = await fetch(`/api/admin/users?${params}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch users data')
       }
+      
+      const result = await response.json()
+      if (result.success) {
+        setUsers(result.data)
+        setPagination(result.pagination)
+      } else {
+        throw new Error(result.error || 'Failed to fetch users data')
+      }
+    } catch (err: any) {
+      console.error('Error fetching users:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchUsers()
+  // Initial load
+  useEffect(() => {
+    fetchUsers(1, q, selectedCourse)
   }, [])
 
-  const rows = useMemo(() => {
-    const v = q.toLowerCase().trim()
-    if (!v) return users
-    return users.filter(
-      (r) =>
-        r.firstName.toLowerCase().includes(v) ||
-        r.lastName.toLowerCase().includes(v) ||
-        r.email.toLowerCase().includes(v) ||
-        r.course.toLowerCase().includes(v),
-    )
-  }, [q, users])
+  // Handle search with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchUsers(1, q, selectedCourse)
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [q])
+
+  // Handle course filter change
+  useEffect(() => {
+    fetchUsers(1, q, selectedCourse)
+  }, [selectedCourse])
+
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    fetchUsers(newPage, q, selectedCourse)
+  }
+
+  // Remove client-side filtering since we're doing server-side search
+  const rows = users
 
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-medium">Users</h2>
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search name, email, course"
-          className="w-[260px]"
-        />
+        <div className="flex items-center gap-2">
+          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {COURSE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search name or email"
+            className="w-[200px]"
+          />
+        </div>
       </div>
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
@@ -112,6 +173,34 @@ export default function UsersTable() {
             )}
           </TableBody>
         </Table>
+      </div>
+      
+      {/* Pagination Controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handlePageChange(pagination.page - 1)}
+            disabled={!pagination.hasPrev || loading}
+          >
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handlePageChange(pagination.page + 1)}
+            disabled={!pagination.hasNext || loading}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </Card>
   )

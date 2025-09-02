@@ -34,52 +34,81 @@ function formatIndianPhone(raw: string) {
   return raw
 }
 
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
 export default function PhoneLoginsTable() {
   const [q, setQ] = useState("")
   const [phones, setPhones] = useState<PhoneLogin[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  })
 
   // Fetch phones data from API
-  useEffect(() => {
-    const fetchPhones = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/admin/loggedin-phones')
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch phones data')
-        }
-        
-        const result = await response.json()
-        if (result.success) {
-          setPhones(result.data)
-        } else {
-          throw new Error(result.error || 'Failed to fetch phones data')
-        }
-      } catch (err: any) {
-        console.error('Error fetching phones:', err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
+  const fetchPhones = async (page: number = 1, search: string = '') => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        ...(search && { search })
+      })
+      
+      const response = await fetch(`/api/admin/loggedin-phones?${params}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch phones data')
       }
+      
+      const result = await response.json()
+      if (result.success) {
+        setPhones(result.data)
+        setPagination(result.pagination)
+      } else {
+        throw new Error(result.error || 'Failed to fetch phones data')
+      }
+    } catch (err: any) {
+      console.error('Error fetching phones:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchPhones()
+  // Initial load
+  useEffect(() => {
+    fetchPhones(1, q)
   }, [])
 
-  const rows = useMemo(() => {
-    const v = q.toLowerCase().trim()
-    if (!v) return phones
-    return phones.filter((r) => {
-      const formatted = formatIndianPhone(r.phoneNumber).toLowerCase()
-      return (
-        formatted.includes(v) ||
-        r.phoneNumber.toLowerCase().includes(v) ||
-        r.userId.toLowerCase().includes(v)
-      )
-    })
-  }, [q, phones])
+  // Handle search with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchPhones(1, q)
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [q])
+
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    fetchPhones(newPage, q)
+  }
+
+  // Remove client-side filtering since we're doing server-side search
+  const rows = phones
 
   return (
     <Card className="p-4">
@@ -87,9 +116,16 @@ export default function PhoneLoginsTable() {
         <h2 className="text-lg font-medium">Logged-in Phone Numbers</h2>
         <Input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Filter by phone or user"
+          onChange={(e) => {
+            // Only allow numbers
+            const numericValue = e.target.value.replace(/[^\d]/g, '')
+            setQ(numericValue)
+          }}
+          placeholder="Search by phone or user ID (numbers only)"
           className="w-[260px]"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
         />
       </div>
       {error && (
@@ -131,6 +167,35 @@ export default function PhoneLoginsTable() {
           </TableBody>
         </Table>
       </div>
+      
+      {/* Pagination Controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handlePageChange(pagination.page - 1)}
+            disabled={!pagination.hasPrev || loading}
+          >
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handlePageChange(pagination.page + 1)}
+            disabled={!pagination.hasNext || loading}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+      
       <div className="mt-3 flex justify-end">
         <Button variant="secondary">Export CSV</Button>
       </div>
