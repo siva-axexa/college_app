@@ -32,46 +32,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid phone number or OTP format' }, { status: 400 });
     }
 
-    let user: any; // ✅ Declare user variable outside if/else
+    let user: any;
 
-    // ✅ Development Mode: Verify OTP from Supabase
     if (process.env.NODE_ENV === 'development') {
-      const { data, error } = await supabase
-        .from('Student')
-        .select('id, phoneNumber, otp, otpExpiresAt, signedUp, isVerifiedUser')
-        .eq('phoneNumber', phoneNumberDigits)
-        .single();
-
-      if (error || !data) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-
-      if (data.otp !== otpNumber) {
-        return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 });
-      }
-
-      const now = Date.now();
-      const expiry = new Date(data.otpExpiresAt).getTime();
-
-      if (now > expiry) {
-        return NextResponse.json({ error: 'OTP expired' }, { status: 400 });
-      }
-
-      user = data; // ✅ Assign the user data
-    } else {
-      // ✅ Production Mode: Use Twilio Verify API
-      const verificationCheck = await client.verify.v2.services(serviceId)
-        .verificationChecks
-        .create({
-          to: formattedPhone,
-          code: otp,
-        });
-        console.log("verificationCheck", verificationCheck)
-      if (verificationCheck.status !== 'approved') {
-        return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 });
-      }
-
-      // ✅ Lookup the user in DB
+      // Dev mode: skip Twilio, just find user
       const { data, error } = await supabase
         .from('Student')
         .select('id, phoneNumber, signedUp, isVerifiedUser')
@@ -82,13 +46,41 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      user = data; // ✅ Assign the user data
+      console.log(`[DEV MODE] OTP accepted without verification for ${formattedPhone}`);
+      user = data;
+    } else {
+      // Production: Verify OTP with Twilio
+      const verificationCheck = await client.verify.v2.services(serviceId)
+        .verificationChecks
+        .create({
+          to: formattedPhone,
+          code: otp,
+        });
+
+      console.log("Twilio verificationCheck", verificationCheck);
+
+      if (verificationCheck.status !== 'approved') {
+        return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 });
+      }
+
+      // Fetch user from database
+      const { data, error } = await supabase
+        .from('Student')
+        .select('id, phoneNumber, signedUp, isVerifiedUser')
+        .eq('phoneNumber', phoneNumberDigits)
+        .single();
+
+      if (error || !data) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      user = data;
     }
 
-    // ✅ Token Generation (shared)
+    // Token generation
     const tokenPayload = {
       userId: user.id,
-      phoneNumber: user.phoneNumber
+      phoneNumber: user.phoneNumber,
     };
 
     const authToken = generateAuthToken(tokenPayload);
@@ -104,8 +96,6 @@ export async function POST(request: NextRequest) {
         authTokenExpiresat: authTokenExpiresAt,
         refreshToken,
         refreshTokenExpiresat: refreshTokenExpiresAt,
-        otp: null,
-        otpExpiresAt: null,
         isVerifiedUser: true,
       })
       .eq('id', user.id);
@@ -120,7 +110,7 @@ export async function POST(request: NextRequest) {
       authToken,
       refreshToken,
       userId: user.id,
-      isSignedUp: user.signedUp || false
+      isSignedUp: user.signedUp || false,
     });
 
   } catch (error: any) {
