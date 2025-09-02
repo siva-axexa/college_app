@@ -1,0 +1,308 @@
+{
+  "info": {
+    "name": "College App API Collection",
+    "description": "Complete API collection for the College Management Application",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication APIs",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "send-otp"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"9876543210\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verify-otp"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"authToken\": \"your_auth_token_here\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"collegeCourse\": \"ENGINEERING\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/create-account",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "create-account"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"authToken\": \"your_auth_token_here\",\n  \"refreshToken\": \"your_refresh_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "refresh-token"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "College Management APIs",
+      "item": [
+        {
+          "name": "Get Colleges",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/colleges?page=1&limit=10&search=&status=ALL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "colleges"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by college name or location"
+                },
+                {
+                  "key": "status",
+                  "value": "ALL",
+                  "description": "Filter by status: ALL, ACTIVE, INACTIVE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create College",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MIT College of Engineering\",\n  \"location\": \"Cambridge, MA\",\n  \"about\": \"<p>Premier engineering college with <strong>excellent facilities</strong></p>\",\n  \"courseAndFees\": \"<ul><li>Computer Science - $50,000/year</li><li>Mechanical Engineering - $45,000/year</li></ul>\",\n  \"hostel\": \"<p>Modern hostel facilities with AC rooms</p>\",\n  \"placementAndScholarship\": \"<p>100% placement record with top companies</p>\",\n  \"nirfRanking\": 1,\n  \"logo\": \"https://example.com/logo.png\",\n  \"images\": [\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"],\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/colleges",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "colleges"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get College by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/colleges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "colleges", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update College",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MIT College of Engineering (Updated)\",\n  \"location\": \"Cambridge, MA\",\n  \"about\": \"<p>Updated description with <strong>new facilities</strong></p>\",\n  \"courseAndFees\": \"<ul><li>Computer Science - $55,000/year</li><li>Mechanical Engineering - $50,000/year</li></ul>\",\n  \"hostel\": \"<p>Renovated hostel facilities</p>\",\n  \"placementAndScholarship\": \"<p>Enhanced placement support</p>\",\n  \"nirfRanking\": 1,\n  \"logo\": \"https://example.com/new-logo.png\",\n  \"images\": [\"https://example.com/new-image1.jpg\"],\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/colleges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "colleges", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete College",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/colleges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "colleges", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin APIs",
+      "item": [
+        {
+          "name": "Get Logged-in Phones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/loggedin-phones?page=1&limit=10&search=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "loggedin-phones"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by phone number or user ID (numeric only)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users?page=1&limit=10&search=&course=ALL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by first name, last name, or email"
+                },
+                {
+                  "key": "course",
+                  "value": "ALL",
+                  "description": "Filter by course: ALL, ENGINEERING, MEDICAL, ARTS, LAW"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Debug/Check APIs",
+      "item": [
+        {
+          "name": "Check Twilio Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/check-twilio",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "check-twilio"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

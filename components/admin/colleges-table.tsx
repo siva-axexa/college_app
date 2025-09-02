@@ -109,9 +109,28 @@ export default function CollegesTable() {
   }
 
   // Handle edit college
-  const handleEdit = (college: College) => {
-    setEditingCollege(college)
-    setShowForm(true)
+  const handleEdit = async (college: College) => {
+    try {
+      setLoading(true)
+      // Fetch full college data for editing
+      const response = await fetch(`/api/colleges/${college.id}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch college details')
+      }
+      const result = await response.json()
+      if (result.success) {
+        console.log('Full college data for editing:', result.data) // Debug log
+        setEditingCollege(result.data)
+        setShowForm(true)
+      } else {
+        throw new Error(result.error || 'Failed to fetch college details')
+      }
+    } catch (err: any) {
+      console.error('Error fetching college for edit:', err)
+      alert('Failed to load college data: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Handle delete college

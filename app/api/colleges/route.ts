@@ -13,10 +13,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'ALL';
     const offset = (page - 1) * limit;
 
-    // Build the query
+    // Build the query with optimized field selection for table view
     let query = supabase
       .from('College')
-      .select('*', { count: 'exact' })
+      .select('id, name, location, logo, nirfRanking, status, created_at', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     // Add status filter
@@ -24,11 +24,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status === 'ACTIVE');
     }
 
-    // Add search functionality
+    // Add search functionality with better performance
     if (search.trim()) {
-      const searchTerm = search.trim();
-      // Search by college name or location
-      query = query.or(`name.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`);
+      const searchTerm = search.trim().toLowerCase();
+      // Use ilike with index-friendly patterns
+      query = query.or(`name.ilike.${searchTerm}%,location.ilike.${searchTerm}%`);
     }
 
     // Apply pagination

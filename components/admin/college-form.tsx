@@ -4,12 +4,12 @@ import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import RichTextEditor from "@/components/ui/rich-text-editor"
 import { ArrowLeft, Upload, X, Plus, ImageIcon } from "lucide-react"
 import { College } from "@/lib/supabase"
-import { uploadFile, uploadMultipleFiles } from "@/lib/storage"
+import { uploadFile, uploadMultipleFiles, deleteFile } from "@/lib/storage"
 
 interface CollegeFormProps {
   college?: College | null
@@ -40,6 +40,7 @@ export default function CollegeForm({ college, onSubmit, onCancel }: CollegeForm
   // Initialize form data when college prop changes
   useEffect(() => {
     if (college) {
+      console.log('Loading college data:', college) // Debug log
       setFormData({
         name: college.name || '',
         location: college.location || '',
@@ -75,11 +76,39 @@ export default function CollegeForm({ college, onSubmit, onCancel }: CollegeForm
   }
 
   // Handle remove image
-  const handleRemoveImage = (index: number) => {
+  const handleRemoveImage = async (index: number) => {
+    const imageUrl = formData.images[index]
+    
+    // Delete from storage if it's a Supabase URL
+    if (imageUrl && imageUrl.includes('supabase.co/storage/v1/object/public/college_images/')) {
+      try {
+        await deleteFile('college_images', imageUrl)
+      } catch (error) {
+        console.error('Failed to delete image from storage:', error)
+        // Continue with UI update even if storage deletion fails
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }))
+  }
+
+  // Handle logo change (delete old logo if exists)
+  const handleLogoChange = async (newLogoUrl: string) => {
+    const oldLogoUrl = formData.logo
+    
+    // Delete old logo from storage if it exists and is different
+    if (oldLogoUrl && oldLogoUrl !== newLogoUrl && oldLogoUrl.includes('supabase.co/storage/v1/object/public/college_logo/')) {
+      try {
+        await deleteFile('college_logo', oldLogoUrl)
+      } catch (error) {
+        console.error('Failed to delete old logo from storage:', error)
+      }
+    }
+    
+    handleChange('logo', newLogoUrl)
   }
 
   // Handle logo file upload
@@ -94,7 +123,7 @@ export default function CollegeForm({ college, onSubmit, onCancel }: CollegeForm
         throw new Error(error)
       }
       if (url) {
-        handleChange('logo', url)
+        await handleLogoChange(url)
       }
     } catch (err: any) {
       setError('Failed to upload logo: ' + err.message)
@@ -246,7 +275,7 @@ export default function CollegeForm({ college, onSubmit, onCancel }: CollegeForm
           <div className="flex gap-2">
             <Input
               value={formData.logo}
-              onChange={(e) => handleChange('logo', e.target.value)}
+              onChange={(e) => handleLogoChange(e.target.value)}
               placeholder="Enter logo URL or upload file"
               className="flex-1"
             />
@@ -343,62 +372,38 @@ export default function CollegeForm({ college, onSubmit, onCancel }: CollegeForm
         </div>
 
         {/* Rich Text Fields */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="about">About College</Label>
-            <Textarea
-              id="about"
-              value={formData.about}
-              onChange={(e) => handleChange('about', e.target.value)}
-              placeholder="Enter college description, history, facilities, etc."
-              rows={4}
-            />
-            <p className="text-xs text-muted-foreground">
-              You can use basic HTML tags like &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;
-            </p>
-          </div>
+        <div className="space-y-6">
+          <RichTextEditor
+            id="about"
+            label="About College"
+            value={formData.about}
+            onChange={(value) => handleChange('about', value)}
+            placeholder="Enter college description, history, facilities, etc."
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="courseAndFees">Courses & Fees</Label>
-            <Textarea
-              id="courseAndFees"
-              value={formData.courseAndFees}
-              onChange={(e) => handleChange('courseAndFees', e.target.value)}
-              placeholder="Enter course details, fees structure, etc."
-              rows={4}
-            />
-            <p className="text-xs text-muted-foreground">
-              You can use basic HTML tags like &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;
-            </p>
-          </div>
+          <RichTextEditor
+            id="courseAndFees"
+            label="Courses & Fees"
+            value={formData.courseAndFees}
+            onChange={(value) => handleChange('courseAndFees', value)}
+            placeholder="Enter course details, fees structure, etc."
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="hostel">Hostel Information</Label>
-            <Textarea
-              id="hostel"
-              value={formData.hostel}
-              onChange={(e) => handleChange('hostel', e.target.value)}
-              placeholder="Enter hostel facilities, fees, rules, etc."
-              rows={4}
-            />
-            <p className="text-xs text-muted-foreground">
-              You can use basic HTML tags like &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;
-            </p>
-          </div>
+          <RichTextEditor
+            id="hostel"
+            label="Hostel Information"
+            value={formData.hostel}
+            onChange={(value) => handleChange('hostel', value)}
+            placeholder="Enter hostel facilities, fees, rules, etc."
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="placementAndScholarship">Placement & Scholarship</Label>
-            <Textarea
-              id="placementAndScholarship"
-              value={formData.placementAndScholarship}
-              onChange={(e) => handleChange('placementAndScholarship', e.target.value)}
-              placeholder="Enter placement statistics, scholarship details, etc."
-              rows={4}
-            />
-            <p className="text-xs text-muted-foreground">
-              You can use basic HTML tags like &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;
-            </p>
-          </div>
+          <RichTextEditor
+            id="placementAndScholarship"
+            label="Placement & Scholarship"
+            value={formData.placementAndScholarship}
+            onChange={(value) => handleChange('placementAndScholarship', value)}
+            placeholder="Enter placement statistics, scholarship details, etc."
+          />
         </div>
 
         {/* Form Actions */}
