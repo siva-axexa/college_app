@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Label } from "@/components/ui/label"
+import { commands as mdCommands } from "@uiw/react-md-editor"
 
 // Dynamically import MDEditor to avoid SSR issues
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false })
@@ -48,73 +49,111 @@ export default function RichTextEditor({
         <MDEditor
           value={value}
           onChange={(val) => onChange(val || "")}
-          data-color-mode="light"
+          data-color-mode="dark"
           preview="edit"
           hideToolbar={false}
-          height={200}
+          height={300}
           style={{
-            backgroundColor: '#f8f9fa',
+            backgroundColor: '#1a1a1a',
           }}
           textareaProps={{
             placeholder: placeholder,
             style: {
               fontSize: '14px',
-              lineHeight: '1.5',
+              lineHeight: '1.6',
               fontFamily: 'inherit',
-              backgroundColor: '#f8f9fa',
-              color: '#212529'
+              backgroundColor: '#1a1a1a',
+              color: '#ffffff'
             }
           }}
+          commands={[
+            mdCommands.bold,
+            mdCommands.italic,
+            mdCommands.divider,
+            mdCommands.unorderedListCommand,
+            mdCommands.orderedListCommand,
+            mdCommands.link,
+          ]}
         />
       </div>
       <p className="text-xs text-muted-foreground">
-        Supports Markdown formatting: **bold**, *italic*, [links](url), lists, and more
+        Use toolbar buttons or Markdown: **bold**, *italic*, [link](url), - bullet points, 1. numbered list
       </p>
       <style jsx global>{`
+        /* Main editor container - Dark theme */
         .rich-text-editor .w-md-editor {
-          background-color: #f8f9fa !important;
-          border: 1px solid #dee2e6 !important;
+          background-color: #1a1a1a !important;
+          border: 1px solid #404040 !important;
         }
+        
+        /* Text area container */
         .rich-text-editor .w-md-editor-text-container {
-          background-color: #f8f9fa !important;
+          background-color: #1a1a1a !important;
         }
+        
+        /* Text area - White text on dark background */
         .rich-text-editor .w-md-editor-text {
-          color: #212529 !important;
+          color: #ffffff !important;
           font-size: 14px !important;
-          line-height: 1.5 !important;
-          background-color: #f8f9fa !important;
+          line-height: 1.6 !important;
+          background-color: #1a1a1a !important;
+          font-family: inherit !important;
         }
+        
         .rich-text-editor .w-md-editor-text-container .w-md-editor-text {
-          background-color: #f8f9fa !important;
+          background-color: #1a1a1a !important;
+          color: #ffffff !important;
         }
+        
+        /* Toolbar - Dark theme */
         .rich-text-editor .w-md-editor-toolbar {
-          background-color: #e9ecef !important;
-          border-bottom: 1px solid #dee2e6 !important;
+          background-color: #2d2d2d !important;
+          border-bottom: 1px solid #404040 !important;
         }
+        
+        /* Toolbar buttons */
         .rich-text-editor .w-md-editor-toolbar li button {
-          color: #212529 !important;
+          color: #ffffff !important;
         }
+        
         .rich-text-editor .w-md-editor-toolbar li button:hover {
-          background-color: #dee2e6 !important;
+          background-color: #404040 !important;
+          color: #ffffff !important;
         }
+        
+        .rich-text-editor .w-md-editor-toolbar li button.active {
+          background-color: #0d6efd !important;
+          color: #ffffff !important;
+        }
+        
+        /* Focus state */
         .rich-text-editor .w-md-editor.w-md-editor-focus {
           border-color: #0d6efd !important;
-          box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1) !important;
+          box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2) !important;
         }
-        .dark .rich-text-editor .w-md-editor {
-          background-color: #2d3436 !important;
-          border-color: #636e72 !important;
+        
+        /* Placeholder text */
+        .rich-text-editor .w-md-editor-text::placeholder {
+          color: #999999 !important;
         }
-        .dark .rich-text-editor .w-md-editor-text {
-          color: #ddd !important;
-          background-color: #2d3436 !important;
+        
+        /* Divider in toolbar */
+        .rich-text-editor .w-md-editor-toolbar li.w-md-editor-toolbar-divider {
+          border-color: #404040 !important;
         }
-        .dark .rich-text-editor .w-md-editor-toolbar {
-          background-color: #636e72 !important;
-          border-color: #2d3436 !important;
+        
+        /* Remove any conflicting light theme styles */
+        .rich-text-editor [data-color-mode="dark"] .w-md-editor {
+          background-color: #1a1a1a !important;
         }
-        .dark .rich-text-editor .w-md-editor-toolbar li button {
-          color: #ddd !important;
+        
+        .rich-text-editor [data-color-mode="dark"] .w-md-editor-text {
+          color: #ffffff !important;
+          background-color: #1a1a1a !important;
+        }
+        
+        .rich-text-editor [data-color-mode="dark"] .w-md-editor-toolbar {
+          background-color: #2d2d2d !important;
         }
       `}</style>
     </div>
