@@ -21,6 +21,7 @@ import {
   FileText,
   ScrollText,
   BadgeCheck,
+  GraduationCap,
 } from "lucide-react"
 
 import { Home } from "lucide-react"
@@ -150,6 +151,9 @@ export default function Sidebar() {
                   </NavItem>
                   <NavItem href="#" icon={Folder}>
                     Projects
+                  </NavItem>
+                  <NavItem href="/colleges" icon={GraduationCap}>
+                    Colleges
                   </NavItem>
                 </div>
               </div>

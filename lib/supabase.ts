@@ -29,3 +29,18 @@ export interface Student {
   refreshTokenExpiresat: string | null
   isVerifiedUser: boolean | null
 }
+
+export interface College {
+  id: number
+  logo: string | null
+  images: string[] | null
+  name: string | null
+  location: string | null
+  about: string | null
+  courseAndFees: string | null
+  hostel: string | null
+  placementAndScholarship: string | null
+  created_at: string
+  nirfRanking: number | null
+  status: boolean | null
+}
