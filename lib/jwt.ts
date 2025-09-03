@@ -16,6 +16,10 @@ export function generateAuthToken(payload: TokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '20m' })
 }
 
+export function generateSignUpAuthToken(payload: TokenPayload): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '5m' })
+}
+
 // Generate refresh token with 15 day expiration
 export function generateRefreshToken(payload: TokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '15d' })
